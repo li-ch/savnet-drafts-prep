@@ -1,0 +1,1440 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!-- This template is for creating an Internet Draft using xml2rfc,
+     which is available here: http://xml.resource.org. -->
+<!DOCTYPE rfc SYSTEM "rfc2629.dtd">
+<?xml-stylesheet type='text/xsl' href='rfc2629.xslt' ?>
+<!-- used by XSLT processors -->
+<!-- For a complete list and description of processing instructions (PIs), 
+     please see http://xml.resource.org/authoring/README.html. -->
+<?rfc strict="yes" ?>
+<!-- give errors regarding ID-nits and DTD validation -->
+<!-- control the table of contents (ToC) -->
+<?rfc toc="yes"?>
+<!-- generate a ToC -->
+<?rfc tocdepth="3"?>
+<!-- the number of levels of subsections in ToC. default: 3 -->
+<!-- control references -->
+<?rfc symrefs="yes"?>
+<!-- use symbolic references tags, i.e., [RFC2119] instead of [1] -->
+<?rfc sortrefs="yes" ?>
+<!-- sort the reference entries alphabetically -->
+<!-- control vertical white space 
+     (using these PIs as follows is recommended by the RFC Editor) -->
+<?rfc compact="yes" ?>
+<!-- do not start each main section on a new page -->
+<?rfc subcompact="no" ?>
+<!-- keep one blank line between list items -->
+<!-- end of list of popular I-D processing instructions -->
+<rfc category="info" docName="draft-qin-savnet-incentive-01" ipr="trust200902">
+  <front>
+    <title abbrev="SAVNET Incentive">The Incentive Consideration for Source
+    Address Validation in Intra-domain and Inter-domain Networks
+    (SAVNET)</title>
+
+    <author fullname="Lancheng Qin" initials="L." surname="Qin">
+      <organization>Tsinghua University</organization>
+
+      <address>
+        <postal>
+          <street/>
+
+          <city>Beijing</city>
+
+          <region/>
+
+          <code/>
+
+          <country>China</country>
+        </postal>
+
+        <email>qlc19@mails.tsinghua.edu.cn</email>
+
+        <uri/>
+      </address>
+    </author>
+
+    <author fullname="Dan Li" initials="D." surname="Li">
+      <organization>Tsinghua University</organization>
+
+      <address>
+        <postal>
+          <street/>
+
+          <city>Beijing</city>
+
+          <country>China</country>
+        </postal>
+
+        <email>tolidan@tsinghua.edu.cn</email>
+      </address>
+    </author>
+
+    <author fullname="Jianping Wu" initials="J." surname="Wu">
+      <organization>Tsinghua University</organization>
+
+      <address>
+        <postal>
+          <street/>
+
+          <city>Beijing</city>
+
+          <region/>
+
+          <code/>
+
+          <country>China</country>
+        </postal>
+
+        <email>jianping@cernet.edu.cn</email>
+
+        <uri/>
+      </address>
+    </author>
+
+    <date day="8" month="October" year="2022"/>
+
+    <!---->
+
+    <keyword/>
+
+    <abstract>
+      <t>Source address spoofing remains a significant challenge in today's
+      Internet. Although source address validation (SAV) mechanisms, such as
+      ingress filtering <xref target="RFC2827"/>, unicast Reverse Path
+      Forwarding (uRPF)<xref target="RFC3704"/>, and the Enhanced
+      Feasible-Path Unicast Reverse Path Forwarding (EFP-uRPF) <xref
+      target="RFC8704"/>, have been proposed for a long time, none of them
+      have been widely deployed due to their technical limitations, lack of
+      incentive, or other problems. This document specifically explains the
+      incentive problem of existing SAV mechanisms and clarifies the incentive
+      that SAVNET hopes to achieve.</t>
+    </abstract>
+
+    <note title="Requirements Language">
+      <t>The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+      "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+      document are to be interpreted as described in RFC 8174 <xref
+      target="RFC8174"/>.</t>
+    </note>
+  </front>
+
+  <middle>
+    <section title="Introduction">
+      <t>Source address spoofing is one of the most important security threats
+      in the Internet. By using forged source IP addresses, attackers can well
+      hide their real identities and carry out various malicious attacks <xref
+      target="RFC6959"/>, among which reflection attack is the most common and
+      harmful. In the reflection attack, the attacker spoofs the victim's
+      source IP address and sends requests to servers with reflection and
+      amplification functions, such as DNS or NTP servers. Upon receiving the
+      requests, these servers reply a large number of responses to the victim,
+      resulting in a large-scale Distributed Denial of Service (DDoS) attack
+      to the victim.</t>
+
+      <t>To mitigate source address spoofing, several source address
+      validation (SAV) mechanisms (e.g., ingress filtering <xref
+      target="RFC2827"/>, unicast Reverse Path Forwarding (uRPF) <xref
+      target="RFC3704"/>, and the Enhanced Feasible-Path Unicast Reverse Path
+      Forwarding (EFP-uRPF) <xref target="RFC8704"/>) have been proposed to
+      identify and reject traffic with forged source IP addresses. However,
+      they have not been widely deployed due to their technical limitations,
+      lack of incentive, or other problems. Source address spoofing remains a
+      significant challenge in today's Internet.</t>
+
+      <t>To help narrow the gap of existing SAV mechanisms, <xref
+      target="draft-li-savnet-intra-domain-problem-statement"/> and <xref
+      target="draft-wu-savnet-inter-domain-problem-statement"/> describe the
+      fundamental problems of existing SAV mechanisms and define the
+      requirements for the new SAV mechanism. This document further explains
+      the incentive problem of existing SAV mechanisms and specifies the
+      incentive that SAVNET hopes to achieve.</t>
+    </section>
+
+    <section title="Terminology">
+      <t>SAV: Source Address Validation, i.e. validating the authenticity of a
+      packet's source IP address.</t>
+
+      <t>Three roles in a reflection attack:</t>
+
+      <t><list style="symbols">
+          <t>Attacker. A malicious host that spoofs the victim's source IP
+          address when sending a request to the reflector.</t>
+
+          <t>Reflector. A reflective server (e.g., DNS or NTP server) that
+          receives the forged request and responds to the victim.</t>
+
+          <t>Victim. An innocent host that receives a lot of responses from
+          the reflector, resulting in a DoS attack.</t>
+        </list></t>
+
+      <t>Two results in the incentive comparison between EFP-uRPF and
+      SAVNET:</t>
+
+      <t><list style="symbols">
+          <t>"FAIL" means the victim network deploying SAV (EFP-uRPF or
+          SAVNET) cannot help itself prevent the reflection attack.</t>
+
+          <t>"WORK" means the victim network deploying SAV (EFP-uRPF or
+          SAVNET) can help itself prevent the reflection attack.</t>
+        </list></t>
+    </section>
+
+    <section title="The importance of incentive for SAV deployment">
+      <t>Ingress filtering, or BCP38 <xref target="RFC2827"/> requires the
+      network to implement SAV filtering on its outgoing traffic. If all
+      networks deploy BCP38 and only allow outgoing traffic with legitimate
+      source addresses, source address spoofing can be effectively prevented.
+      However, although BCP38 has been proposed for more than 20 years and is
+      highly recommended by the Mutually Agreed Norms for Routing Security
+      (MANRS), it is still not widely deployed in today's Internet. One main
+      reason is that operators lack incentive to deploy BCP38 in their
+      networks. The benefits from deploying BCP38 do not flow to the deployed
+      network, but to the rest of the Internet. Specifically, if a network
+      deploys BCP38, it does not get any benefit from the deployment and is
+      still vulnerable to reflection attacks from other networks. As a result,
+      most networks are reluctant to deploy BCP38 and prefer to wait for
+      others to deploy.</t>
+
+      <t>The deployment problem faced by BCP38 tells us that a desirable SAV
+      mechanism must provide direct incentive/benefits to the deployed
+      network. If a network deploys SAV but finds that it only helps other
+      networks, the network will not be motivated to deploy SAV. If a network
+      deploys SAV and finds that sometimes it can help itself (compared with
+      not deploying), the network will be more motivated to deploy SAV.</t>
+    </section>
+
+    <section title="Incentive comparison between EFP-uRPF and SAVNET">
+      <t>More recently, RFC8704 or BCP84 <xref target="RFC8704"/> proposes the
+      Enhanced Feasible-Path Unicast Reverse Path Forwarding (EFP-uRPF) and
+      recommends operators to adopt EFP-uRPF in most inter-domain scenarios.
+      However, EFP-uRPF is essentially performing ingress filtering at a
+      higher aggregation point (i.e., the top AS of a customer cone) and also
+      has misaligned incentive problems. Nowadays, reflection attack has
+      become one of the most common attacks based on source address spoofing.
+      However, the victim network in a reflection attack will not receive the
+      spoofing request. If an intermediate network deploys SAV to protect
+      itself from source address spoofing attacks, such as single-packet
+      attacks, flood-based DoS, and etc <xref target="RFC6959"/>, it can help
+      prevent the reflection attack when receiving the spoofing request.
+      Therefore, to mitigate reflection attacks, customer or user networks are
+      increasingly asking their upstreaming providers to deploy SAV as close
+      to the source as possible and to protect their source addresses from
+      being forged. Considering the security needs of users, operators can
+      improve their competitiveness by implementing SAV, so they will attract
+      more users and gain more profits.</t>
+
+      <t>In the following, we use reflection attack as an example to measure
+      the incentive that EFP-uRPF or SAVNET can provide to the victim network.
+      We simplify the participants in a reflection attack into three roles
+      (attacker network, reflector network, and victim network) and enumerate
+      three attack scenarios by changing the relative positions of the three
+      roles. In each scenario, we suppose the victim network always deploys
+      SAV mechanism (EFP-uRPF or SAVNET), because only the victim can get
+      benefit from the SAV mechanism. Then, for any deployment case of the
+      other two networks (i.e., attacker network and reflector network), we
+      check whether the reflection attack can be prevented. If so, the victim
+      network has strong motivation to deploy SAV; if not, the victim network
+      has weak motivation to deploy SAV. Since there is no specific SAVNET
+      solution yet, we assume SAVNET can meet the "Accuracy SAV" requirement
+      defined in <xref
+      target="draft-li-savnet-intra-domain-problem-statement"/> and <xref
+      target="draft-wu-savnet-inter-domain-problem-statement"/>, i.e, learning
+      real incoming interfaces for source prefixes based on control-plane
+      information sent from the owner of the source prefixes. In the
+      preliminary idea of SAVNET, each deployed network notifies the valid
+      incoming interfaces for its source prefixes to other deployed
+      networks.</t>
+
+      <section title="Scenario 1">
+        <t>Figure 1 shows the first reflection attack scenario where the
+        reflector network is located between the attacker network and the
+        victim network. The attacker spoofs the source address of the victim
+        and sends a forged request to the reflector. After receiving the
+        request from attacker, the reflector responds to the victim.</t>
+
+        <figure>
+          <artwork align="center"><![CDATA[                   +---------+
+                   |   AS2   +-+Reflector
+                   ++/\+-----+
+                     /     \
+            request /       \ response
+                   /         \
+                  /           \
+          +---------+      +-+\/+----+
+Attacker+-+   AS1   |      |   AS3   +-+ Victim
+          +---------+      +---------+
+
+
+              AS1: Attacker network
+              AS2: Reflector network
+              AS3: Victim network
+
+ Figure 1: The first reflection attack scenario.
+]]></artwork>
+        </figure>
+
+        <section title="Case 1: only AS3 deploys SAV">
+          <t/>
+
+          <texttable title="All SAV mechanisms fail if only AS3 deploys SAV in scenario 1">
+            <ttcol>Relationship between AS1 and AS2</ttcol>
+
+            <ttcol>Relationship between AS2 and AS3</ttcol>
+
+            <ttcol>EFP-uRPF algorithm A</ttcol>
+
+            <ttcol>EFP-uRPF algorithm B</ttcol>
+
+            <ttcol>SAVNET</ttcol>
+
+            <c>P2C</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>P2P</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>C2P</c>
+
+            <c>C2P</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>C2P</c>
+
+            <c>P2P</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>C2P</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+          </texttable>
+
+          <t>Table 1 shows the effectiveness of EFP-uRPF and SAVNET against
+          the reflection attack under different relationships among AS1, AS2,
+          and AS3. We omit combinations of relationships that violate
+          valley-free principle. If only the victim network deploys SAV, both
+          EFP-uRPF and SAVNET fail to prevent the reflection attack in
+          scenario 1, because the victim network does not receive the forged
+          request at all.</t>
+        </section>
+
+        <section title="Case 2: AS1 and AS3 deploy SAV">
+          <t/>
+
+          <texttable title="SAVNET works best if AS1 and AS3 deploy SAV in scenario 1">
+            <ttcol>Relationship between AS1 and AS2</ttcol>
+
+            <ttcol>Relationship between AS2 and AS3</ttcol>
+
+            <ttcol>EFP-uRPF algorithm A</ttcol>
+
+            <ttcol>EFP-uRPF algorithm B</ttcol>
+
+            <ttcol>SAVNET</ttcol>
+
+            <c>P2C</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>WORK</c>
+
+            <c>P2P</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>WORK</c>
+
+            <c>C2P</c>
+
+            <c>C2P</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>WORK</c>
+
+            <c>C2P</c>
+
+            <c>P2P</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>WORK</c>
+
+            <c>C2P</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>WORK</c>
+          </texttable>
+
+          <t>Table 2 shows that SAVNET works best when victim network and
+          attacker network deploy SAV. If AS1 and AS3 deploy SAVNET, AS1
+          learns that traffic with victim's source address must come from
+          outside the AS, not inside the AS. Therefore, SAVNET in AS1 can
+          successfully detect the forged request and prevent the reflection
+          attack. However, since EFP-uRPF in AS1 does not verify outgoing
+          traffic, EFP-uRPF fails in this deployment case.</t>
+        </section>
+
+        <section title="Case 3: AS2 and AS3 deploy SAV">
+          <t/>
+
+          <texttable title="SAVNET works best if AS2 and AS3 deploy SAV in scenario 1">
+            <ttcol>Relationship between AS1 and AS2</ttcol>
+
+            <ttcol>Relationship between AS2 and AS3</ttcol>
+
+            <ttcol>EFP-uRPF algorithm A</ttcol>
+
+            <ttcol>EFP-uRPF algorithm B</ttcol>
+
+            <ttcol>SAVNET</ttcol>
+
+            <c>P2C</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>WORK</c>
+
+            <c>P2P</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>WORK</c>
+
+            <c>C2P</c>
+
+            <c>C2P</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>C2P</c>
+
+            <c>P2P</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>C2P</c>
+
+            <c>P2C</c>
+
+            <c>WORK</c>
+
+            <c>FAIL</c>
+
+            <c>WORK</c>
+          </texttable>
+
+          <t>As shown in Table 3, SAVNET works best when victim network and
+          reflector network deploy SAV. If AS2 and AS3 deploy SAVNET, AS2
+          learns that traffic with victim's source address must come from AS3,
+          so it will block the forged request from AS1. If AS2 and AS3 deploy
+          EFP-uRPF, since EFP-uRPF only work for traffic from customer
+          interfaces, EFP-uRPF algorithm A and algorithm B both fail when AS1
+          is the provider/peer of AS2. EFP-uRPF algorithm A works well when
+          AS1 is the customer of AS2, but EFP-uRPF algorithm B still fails
+          when AS1 and AS3 are both in the customer cone of AS2, because
+          EFP-uRPF algorithm B cannot identify source address spoofing between
+          ASes in customer cone.</t>
+        </section>
+
+        <section title="Case 4: AS1, AS2, and AS3 deploy SAV">
+          <t/>
+
+          <texttable title="SAVNET works best if AS1, AS2, and AS3 deploy SAV in scenario 1">
+            <ttcol>Relationship between AS1 and AS2</ttcol>
+
+            <ttcol>Relationship between AS2 and AS3</ttcol>
+
+            <ttcol>EFP-uRPF algorithm A</ttcol>
+
+            <ttcol>EFP-uRPF algorithm B</ttcol>
+
+            <ttcol>SAVNET</ttcol>
+
+            <c>P2C</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>WORK</c>
+
+            <c>P2P</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>WORK</c>
+
+            <c>C2P</c>
+
+            <c>C2P</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>C2P</c>
+
+            <c>P2P</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>C2P</c>
+
+            <c>P2C</c>
+
+            <c>WORK</c>
+
+            <c>FAIL</c>
+
+            <c>WORK</c>
+          </texttable>
+
+          <t>In scenario 1, SAVNET still works best when all three roles
+          deploy SAV. When they deploy SAVNET, both AS1 and AS2 can
+          effectively identify and block the forged request. When they deploy
+          EFP-uRPF, only AS2 sometimes can prevent the reflection attack, with
+          the same results as Section 4.1.3.</t>
+        </section>
+      </section>
+
+      <section title="Scenario 2">
+        <t>Figure 2 shows the second reflection attack scenario. In scenario
+        2, the victim network is located between the attack network and the
+        reflector network. When attacker sends a forged request to the
+        reflector, the request first arrives at the victim network and then be
+        forwarded to the reflector network. Subsequently, the reflector
+        responds to the victim.</t>
+
+        <t><figure>
+            <artwork align="center"><![CDATA[                  +---------+
+                  |   AS3   +-+Victim
+                  ++/\+--+/\+
+                    /    \ \
+                   /      \ \
+                  /request \ \ response
+                 /          \ \
+          +---------+     + \/+-----+
+Attacker+-+   AS1   |     |   AS2   +-+Reflector
+          +---------+     +---------+
+
+
+              AS1: Attacker network
+              AS2: Reflector network
+              AS3: Victim network
+
+ Figure 2: The second reflection attack scenario.
+]]></artwork>
+          </figure></t>
+
+        <section title="Case 1: only AS3 deploys SAV">
+          <t/>
+
+          <texttable title="SAVNET works best if only AS3 deploys SAV in scenario 2">
+            <ttcol>Relationship between AS1 and AS3</ttcol>
+
+            <ttcol>Relationship between AS3 and AS2</ttcol>
+
+            <ttcol>EFP-uRPF algorithm A</ttcol>
+
+            <ttcol>EFP-uRPF algorithm B</ttcol>
+
+            <ttcol>SAVNET</ttcol>
+
+            <c>P2C</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>WORK</c>
+
+            <c>P2P</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>WORK</c>
+
+            <c>C2P</c>
+
+            <c>C2P</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>C2P</c>
+
+            <c>P2P</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>C2P</c>
+
+            <c>P2C</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+          </texttable>
+
+          <t>Table 5 shows the effectiveness of EFP-uRPF and SAVNET when only
+          AS3 in scenario 2 deploys SAV. If AS3 deploys SAVNET, it can reject
+          the forged request when it receives the forged request. If AS3
+          deploys EFP-uRPF, it only works when AS1 is the customer of AS3
+          because EFP-uRPF only implements SAV filtering at customer
+          interfaces.</t>
+
+          <t>We also compare EFP-uRPF and SAVNET in the following three
+          deployment cases. We find that if the SAV mechanism is EFP-uRPF
+          algorithm A or EFP-uRPF algorithm B, only the victim network in
+          scenario 2 has the possibility to reject the forged request by
+          implementing SAV. Even if attacker network or reflector network also
+          deploys EFP-uRPF, it does not provide additional assistance to
+          victim network. Therefore, on the basis that the victim network has
+          deployed SAV, SAVNET always works best in different deployment
+          cases.</t>
+        </section>
+
+        <section title="Case 2: AS1 and AS3 deploy SAV">
+          <t/>
+
+          <texttable title="SAVNET works best if AS1 and AS3 deploy SAV in scenario 2">
+            <ttcol>Relationship between AS1 and AS3</ttcol>
+
+            <ttcol>Relationship between AS3 and AS2</ttcol>
+
+            <ttcol>EFP-uRPF algorithm A</ttcol>
+
+            <ttcol>EFP-uRPF algorithm B</ttcol>
+
+            <ttcol>SAVNET</ttcol>
+
+            <c>P2C</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>WORK</c>
+
+            <c>P2P</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>WORK</c>
+
+            <c>C2P</c>
+
+            <c>C2P</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>C2P</c>
+
+            <c>P2P</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>C2P</c>
+
+            <c>P2C</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+          </texttable>
+        </section>
+
+        <section title="Case 3: AS2 and AS3 deploy SAV">
+          <t/>
+
+          <texttable title="SAVNET works best if AS2 and AS3 deploy SAV in scenario 2">
+            <ttcol>Relationship between AS1 and AS3</ttcol>
+
+            <ttcol>Relationship between AS3 and AS2</ttcol>
+
+            <ttcol>EFP-uRPF algorithm A</ttcol>
+
+            <ttcol>EFP-uRPF algorithm B</ttcol>
+
+            <ttcol>SAVNET</ttcol>
+
+            <c>P2C</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>WORK</c>
+
+            <c>P2P</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>WORK</c>
+
+            <c>C2P</c>
+
+            <c>C2P</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>C2P</c>
+
+            <c>P2P</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>C2P</c>
+
+            <c>P2C</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+          </texttable>
+        </section>
+
+        <section title="Case 4: AS1, AS2, and AS3 deploy SAV">
+          <t/>
+
+          <texttable title="SAVNET works best if AS1, AS2, and AS3 deploy SAV in scenario 2">
+            <ttcol>Relationship between AS1 and AS3</ttcol>
+
+            <ttcol>Relationship between AS3 and AS2</ttcol>
+
+            <ttcol>EFP-uRPF algorithm A</ttcol>
+
+            <ttcol>EFP-uRPF algorithm B</ttcol>
+
+            <ttcol>SAVNET</ttcol>
+
+            <c>P2C</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>WORK</c>
+
+            <c>P2P</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>WORK</c>
+
+            <c>C2P</c>
+
+            <c>C2P</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>C2P</c>
+
+            <c>P2P</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>C2P</c>
+
+            <c>P2C</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+
+            <c>WORK</c>
+          </texttable>
+        </section>
+      </section>
+
+      <section title="Scenario 3">
+        <t>Figure 3 shows the third reflection attack scenario. The attacker
+        network is located between the victim network and the reflector
+        network. Attacker spoofs victim's source address in the request sent
+        to reflector. Reflector receives the request from the attacker network
+        and sends a response to the victim network via the attacker
+        network.</t>
+
+        <t>Below we make the incentive comparison between EFP-uRPF and SAVNET
+        in scenario 3. By varying SAV deployment status of attacker network
+        and reflector network, we find all SAV mechanisms fail in preventing
+        the reflection attack in this scenario. For victim network, it does
+        not receive the forged request. For attacker network and reflector
+        network, SAV in their networks cannot identify this spoofing because
+        the forged source address (i.e., victim's source address) shares the
+        same valid incoming interface with the actual one (i.e., attacker's
+        source address).</t>
+
+        <t><figure>
+            <artwork align="center"><![CDATA[                +---------+
+                |   AS1   +-+Attacker
+                +----+/\+-+
+                  /    \ \
+                 /      \ \
+                /response\ \request
+               /          \ \
+        +----+\/+-+     +--+\/+---+
+Victim+-+   AS3   |     |   AS2   +-+Reflector
+        +---------+     +---------+
+
+
+             AS1: Attacker network
+             AS2: Reflector network
+             AS3: Victim network
+
+ Figure 3: The third reflection attack scenario.
+]]></artwork>
+          </figure></t>
+
+        <section title="Case 1: only AS3 deploys SAV">
+          <texttable title="All SAV mechanisms fail if only AS3 deploys SAV in scenario 3">
+            <ttcol>Relationship between AS3 and AS1</ttcol>
+
+            <ttcol>Relationship between AS1 and AS2</ttcol>
+
+            <ttcol>EFP-uRPF algorithm A</ttcol>
+
+            <ttcol>EFP-uRPF algorithm B</ttcol>
+
+            <ttcol>SAVNET</ttcol>
+
+            <c>P2C</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>P2P</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>C2P</c>
+
+            <c>C2P</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>C2P</c>
+
+            <c>P2P</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>C2P</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+          </texttable>
+        </section>
+
+        <section title="Case 2: AS1 and AS3 deploy SAV">
+          <texttable title="All SAV mechanisms fail if AS1 and AS3 deploy SAV in scenario 3">
+            <ttcol>Relationship between AS3 and AS1</ttcol>
+
+            <ttcol>Relationship between AS1 and AS2</ttcol>
+
+            <ttcol>EFP-uRPF algorithm A</ttcol>
+
+            <ttcol>EFP-uRPF algorithm B</ttcol>
+
+            <ttcol>SAVNET</ttcol>
+
+            <c>P2C</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>P2P</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>C2P</c>
+
+            <c>C2P</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>C2P</c>
+
+            <c>P2P</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>C2P</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+          </texttable>
+        </section>
+
+        <section title="Case 3: AS2 and AS3 deploy SAV">
+          <texttable title="All SAV mechanisms fail if AS2 and AS3 deploy SAV in scenario 3">
+            <ttcol>Relationship between AS3 and AS1</ttcol>
+
+            <ttcol>Relationship between AS1 and AS2</ttcol>
+
+            <ttcol>EFP-uRPF algorithm A</ttcol>
+
+            <ttcol>EFP-uRPF algorithm B</ttcol>
+
+            <ttcol>SAVNET</ttcol>
+
+            <c>P2C</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>P2P</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>C2P</c>
+
+            <c>C2P</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>C2P</c>
+
+            <c>P2P</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>C2P</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+          </texttable>
+        </section>
+
+        <section title="Case 4: AS1, AS2, and AS3 deploy SAV">
+          <texttable title="All SAV mechanisms fail if AS1, AS2, and AS3 deploy SAV in scenario 3">
+            <ttcol>Relationship between AS3 and AS1</ttcol>
+
+            <ttcol>Relationship between AS1 and AS2</ttcol>
+
+            <ttcol>EFP-uRPF algorithm A</ttcol>
+
+            <ttcol>EFP-uRPF algorithm B</ttcol>
+
+            <ttcol>SAVNET</ttcol>
+
+            <c>P2C</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>P2P</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>C2P</c>
+
+            <c>C2P</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>C2P</c>
+
+            <c>P2P</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>C2P</c>
+
+            <c>P2C</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+
+            <c>FAIL</c>
+          </texttable>
+        </section>
+      </section>
+    </section>
+
+    <section title="Summary">
+      <t>Overall, neither SAVNET nor EFP-uRPF completely prevents the
+      reflection attack. But for any attack scenario or deployment case, we
+      find that SAVNET is doing better or not worse than EFP-uRPF. It is worth
+      noting that AS1 and AS2 in above scenarios can also be targets of
+      reflection attacks from other networks. Therefore, a network has more
+      incentive to deploy SAVNET as the SAV mechanism, because its own network
+      will have high probability of being protected against reflection
+      attacks.</t>
+    </section>
+
+    <section title="Acknowledgments">
+      <t>TBD</t>
+    </section>
+  </middle>
+
+  <back>
+    <references title="Normative References">
+      <?rfc include='reference.RFC.8174'?>
+
+      <?rfc include='reference.RFC.3704'?>
+
+      <?rfc include='reference.RFC.2827'?>
+
+      <?rfc include='reference.RFC.8704'?>
+
+      <?rfc include='reference.RFC.6959'?>
+
+      <reference anchor="draft-li-savnet-intra-domain-problem-statement">
+        <front>
+          <title>Source Address Validation in Intra-domain Networks
+          (Intra-domain SAVNET) Gap Analysis, Problem Statement and
+          Requirements</title>
+
+          <author fullname="Dan Li" initials="D." surname="Li">
+            <organization>Tsinghua University</organization>
+
+            <address>
+              <postal>
+                <street/>
+
+                <city>Beijing</city>
+
+                <country>China</country>
+              </postal>
+
+              <email>tolidan@tsinghua.edu.cn</email>
+            </address>
+          </author>
+
+          <author fullname="Jianping Wu" initials="J." surname="Wu">
+            <organization>Tsinghua University</organization>
+
+            <address>
+              <postal>
+                <street/>
+
+                <city>Beijing</city>
+
+                <region/>
+
+                <code/>
+
+                <country>China</country>
+              </postal>
+
+              <email>jianping@cernet.edu.cn</email>
+
+              <uri/>
+            </address>
+          </author>
+
+          <author fullname="Lancheng Qin" initials="L." surname="Qin">
+            <organization>Tsinghua University</organization>
+
+            <address>
+              <postal>
+                <street/>
+
+                <city>Beijing</city>
+
+                <region/>
+
+                <code/>
+
+                <country>China</country>
+              </postal>
+
+              <email>qlc19@mails.tsinghua.edu.cn</email>
+
+              <uri/>
+            </address>
+          </author>
+
+          <author fullname="Mingqing Huang" initials="M." surname="Huang">
+            <organization>Huawei</organization>
+
+            <address>
+              <postal>
+                <street/>
+
+                <city>Beijing</city>
+
+                <region/>
+
+                <code/>
+
+                <country>China</country>
+              </postal>
+
+              <email>huangmingqing@huawei.com</email>
+
+              <uri/>
+            </address>
+          </author>
+
+          <author fullname="Nan Geng" initials="N." surname="Geng">
+            <organization>Huawei</organization>
+
+            <address>
+              <postal>
+                <street/>
+
+                <city>Beijing</city>
+
+                <region/>
+
+                <code/>
+
+                <country>China</country>
+              </postal>
+
+              <email>gengnan@huawei.com</email>
+
+              <uri/>
+            </address>
+          </author>
+
+          <date day="10" month="July" year="2022"/>
+        </front>
+      </reference>
+
+      <reference anchor="draft-wu-savnet-inter-domain-problem-statement">
+        <front>
+          <title>Source Address Validation in Inter-domain Networks
+          (Inter-domain SAVNET) Gap Analysis, Problem Statement and
+          Requirements</title>
+
+          <author fullname="Jianping Wu" initials="J." surname="Wu">
+            <organization>Tsinghua University</organization>
+
+            <address>
+              <postal>
+                <street/>
+
+                <city>Beijing</city>
+
+                <region/>
+
+                <code/>
+
+                <country>China</country>
+              </postal>
+
+              <email>jianping@cernet.edu.cn</email>
+
+              <uri/>
+            </address>
+          </author>
+
+          <author fullname="Dan Li" initials="D." surname="Li">
+            <organization>Tsinghua University</organization>
+
+            <address>
+              <postal>
+                <street/>
+
+                <city>Beijing</city>
+
+                <country>China</country>
+              </postal>
+
+              <email>tolidan@tsinghua.edu.cn</email>
+            </address>
+          </author>
+
+          <author fullname="Lancheng Qin" initials="L." surname="Qin">
+            <organization>Tsinghua University</organization>
+
+            <address>
+              <postal>
+                <street/>
+
+                <city>Beijing</city>
+
+                <region/>
+
+                <code/>
+
+                <country>China</country>
+              </postal>
+
+              <email>qlc19@mails.tsinghua.edu.cn</email>
+
+              <uri/>
+            </address>
+          </author>
+
+          <author fullname="Mingqing Huang" initials="M." surname="Huang">
+            <organization>Huawei</organization>
+
+            <address>
+              <postal>
+                <street/>
+
+                <city>Beijing</city>
+
+                <region/>
+
+                <code/>
+
+                <country>China</country>
+              </postal>
+
+              <email>huangmingqing@huawei.com</email>
+
+              <uri/>
+            </address>
+          </author>
+
+          <author fullname="Nan Geng" initials="N." surname="Geng">
+            <organization>Huawei</organization>
+
+            <address>
+              <postal>
+                <street/>
+
+                <city>Beijing</city>
+
+                <region/>
+
+                <code/>
+
+                <country>China</country>
+              </postal>
+
+              <email>gengnan@huawei.com</email>
+
+              <uri/>
+            </address>
+          </author>
+
+          <date day="10" month="July" year="2022"/>
+        </front>
+      </reference>
+    </references>
+  </back>
+</rfc>
