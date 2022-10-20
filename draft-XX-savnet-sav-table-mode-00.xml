@@ -28,7 +28,8 @@
 <rfc category="info" docName="draft-XX-savnet-sav-table-mode-00"
      ipr="trust200902">
   <front>
-    <title abbrev="SAV Table Mode">Modes for General Source Address Validation Table</title>
+    <title abbrev="SAV Table Mode">Modes for General Source Address Validation
+    Table</title>
 
     <author fullname="San Zhang" initials="S." surname="Zhang">
       <organization>XX</organization>
@@ -53,9 +54,20 @@
     <keyword/>
 
     <abstract>
-      <t>Source address validation (SAV) table consists of many SAV rules that are manually configured or automatically generated. The table will take effect in data plane for checking the validity of source adddresses of incoming packets and indicating corresponding actions (block, permit, sampling, etc.). This document describes four modes for general SAV table and their validation procedures. These modes work under different conditions and have different validation procedures. The optional actions for each validity state are also introduced. </t>
+      <t>Source address validation (SAV) table consists of SAV rules that are
+      manually configured or automatically generated. The table will take
+      effect in data plane for checking the validity of source adddresses of
+      incoming packets and indicating corresponding actions (block, permit,
+      sampling, etc.). This document describes four modes for general SAV
+      table and their validation procedures. These modes work under different
+      conditions and have different validation procedures. The optional
+      actions for each validity state are also introduced.</t>
 
-      <t>This document aims to give a general and complete view of SAV tables in data plane. The view can help make the design goals of SAV mechainms clear. It also provides guidance to operators on the choice of SAV table modes and SAV mechanisms, but how to generate these SAV tables is not the focus of this document. </t>
+      <t>This document aims to give a general and complete view of SAV tables
+      in data plane. The view can help make the design goals of SAV mechainms
+      clear. It also provides guidance to operators on the choice of SAV table
+      modes and SAV mechanisms, but how to generate these SAV tables is not
+      the focus of this document.</t>
     </abstract>
 
     <note title="Requirements Language">
@@ -70,11 +82,24 @@
     <section title="Introduction">
       <t/>
 
-      <t>Source address validation (SAV) is for preventing source address spoofing attacks. When packets arrive at a router, it will be checked that whether the packets carry the expected source adddresses and are from the expected incoming interfaces. To achieve this, SAV table consists of many SAV rules will be enabled in data plane. These SAV rules are used to express the validation methods for achieving specific security goals.</t>
+      <t>Source address validation (SAV) is for preventing source address
+      spoofing attacks. When packets arrive at a router, the router will check
+      whether the packets carry the expected source adddresses and are
+      arriving from the expected incoming interfaces. The router achieve this
+      with the SAV table, which consists of SAV rules. These SAV rules are
+      used to express the validation intentions for achieving specific
+      security goals.</t>
 
-      <t>SAV tables can be obtained in many ways, such as direct ACL configuration, ACL rules from FlowSpec, uRPF-like mechainms, SAV protocols, etc. The SAV tables of these methods exist in different forms in data plane and work in different modes. </t>
+      <t>SAV tables can be obtained in many ways, such as direct ACL
+      configuration, ACL rules from FlowSpec, uRPF-like mechainms, SAV
+      protocols, etc. The SAV tables of these methods exist in different forms
+      in data plane and work in different modes.</t>
 
-      <t>This document analyzes how existing SAV mechainms carry out their SAV tasks in data plane followed with limitation analysis. After that, the document introduces four modes for general SAV table and their working conditions. Finally, the SAV table structure and validation procedures will be presented. </t>
+      <t>This document analyzes how existing SAV mechanisms carry out their
+      SAV tasks in data plane followed with limitation analysis. After that,
+      the document introduces four modes for general SAV table and their
+      working conditions. Finally, the SAV table structure and validation
+      procedures will be presented.</t>
 
       <t/>
     </section>
@@ -84,64 +109,129 @@
     <section title="Terminology">
       <t/>
 
-      <t>SAV rule: The entry indicating an action for the packets matching a specific source adddress prefix and/or an incoming interface. </t>
+      <t>SAV rule: The entry indicating an action for the packets matching a
+      specific source adddress prefix and/or an incoming interface.</t>
 
-      <t>SAV table: The data structure that stores SAV rules on the data
-      plane for the validation of source address authenticity. </t>
+      <t>SAV table: The data structure that stores SAV rules on the data plane
+      for the validation of source address authenticity.</t>
 
-      <t>Improper block: The unexpected SAV result that the packets with legitimate source addresses are considered illegal by mistake.</t>
+      <t>Improper block: The unexpected SAV result that the packets with
+      legitimate source addresses are considered illegal by mistake.</t>
 
-      <t>Improper permit: The unexpected SAV result that the packets with spoofed source addresses are considered legal by mistake.</t>
+      <t>Improper permit: The unexpected SAV result that the packets with
+      spoofed source addresses are considered legal by mistake.</t>
 
-      <t>IP prefix allowlist: The SAV rules only indicating legal source adddress prefixes.</t>
+      <t>IP prefix allowlist: The SAV rules only indicating legal source
+      adddress prefixes.</t>
 
-      <t>IP prefix blocklist: The SAV rules only indicating illegal source adddress prefixes.</t>
-
+      <t>IP prefix blocklist: The SAV rules only indicating illegal source
+      adddress prefixes.</t>
     </section>
 
     <section title="Analysis of Existing SAV Methods">
       <t/>
 
-      <t>This section introduces and analyzes three typical methods for carrying out SAV. The analysis is conducted through three perspectives: validation mode, validation actions, and the expression manner in data plane. Validation mode means how to judge the validity of source prefixes. Validation actions are the actions required to be taken after validity judgement. </t>
+      <t>This section introduces and analyzes three typical methods for
+      carrying out SAV. The analysis is conducted through three perspectives:
+      validation mode, validation actions, and the expression methods in data
+      plane. Validation mode means how to judge the validity of source
+      prefixes. Validation actions are the actions required to be taken after
+      validity judgement.</t>
 
       <section title="ACL-based SAV">
-        <t>ACL-based SAV <xref target="RFC3704"/> is usually for ingress filtering. ACL rules are typically configured manually or through FlowSpec. Packets matching the ACL rules will be dropped or permitted. </t>
+        <t>ACL-based SAV <xref target="RFC3704"/> is usually for ingress
+        filtering. ACL rules are typically configured manually or through
+        FlowSpec. Packets matching the ACL rules will be dropped or
+        permitted.</t>
 
-        <t>ACL has very powerful expression ability for traffic classification. An ACL rule can match a specific set of packets through multiple match fields for applying drop, permit, or some other actions. </t>
-        
-        <t>However, the size of ACL tables is usually small, e.g., 5,000 in routers. It is not suitable to validating a large set of source addresses. Besides, an ACL rule has multiple match fields for processing, which can be inefficient for SAV. </t>
+        <t>ACL has very powerful expression ability for traffic
+        classification. An ACL rule can match a specific set of packets
+        through multiple match fields for applying drop, permit, or some other
+        actions.</t>
+
+        <t>However, the size of ACL tables is usually small, e.g., 5,000 in
+        routers. It is not suitable to validating a large set of source
+        addresses. Besides, an ACL rule has multiple match fields for
+        processing, which are unnecessary for SAV.</t>
       </section>
-      
+
       <section title="FIB-based SAV">
-        <t>Strict uRPF <xref target="RFC3704"/> is a SAV mechanism using FIB for SAV. When a packet arrives at a router, look up the local FIB by the source address of the packet. If the next-hop interfaces of the matched FIB entry include the incoming interface of the packet, the packet will be forwarded normally. Otherwise, it will be discarded. Strict uRPF can be enabled at specific interfaces of a router for validating the packets entering the router from these interfaces. The optional actions for strict uRPF </t>
+        <t>Strict uRPF <xref target="RFC3704"/> is a SAV mechanism using FIB
+        for SAV. When a packet arrives at a router, look up the local FIB by
+        the source address of the packet. If the next-hop interfaces of the
+        matched FIB entry include the incoming interface of the packet, the
+        packet will be forwarded normally. Otherwise, it will be discarded.
+        Strict uRPF can be enabled at specific interfaces of a router for
+        validating the packets entering the router from these interfaces. The
+        optional actions for strict uRPF</t>
 
-        <t>The validation mode of strict uRPF is to check whether a specific source prefix comes from expected interfaces. The equivalent validation mode is to check whether the source prefix is expected by a specific interface. Thus, strict uRPF does SAV in the way of IP prefix allowlist that lists the legal source prefixes for an interface. The optional actions for strict uRPF simply includes drop and permit. There are not other action available in existing mechainms. </t>
+        <t>The validation mode of strict uRPF is to check whether a specific
+        source prefix comes from expected interfaces. The equivalent
+        validation mode is to check whether the source prefix is expected by a
+        specific interface. Thus, strict uRPF does SAV in the way of IP prefix
+        allowlist that lists the legal source prefixes for an interface. The
+        optional actions for strict uRPF simply includes drop and permit.
+        There are not other action available in existing mechainms.</t>
 
-        <t>Strict uRPF leverage FIB for the SAV table expression in data plane (also SAV table generation). It may be faced with improper block problems or improper permit problem under asymmetry routing. For easy management, operators usually disable strict uRPF or take on loose uRPF <xref target="RFC3704"/>. </t>
+        <t>Strict uRPF leverage FIB for the SAV table expression in data plane
+        (also SAV table generation). It may be faced with improper block
+        problems or improper permit problem under asymmetry routing. For easy
+        management, operators usually disable strict uRPF or take on loose
+        uRPF <xref target="RFC3704"/>.</t>
 
-        <t>Loose uRPF <xref target="RFC3704"/> also leverages FIB for SAV, but it takes a much looser validation than strict uRPF. Particularlly, if there exists a FIB entry whose source prefix covering the source address of an incoming packet, the router will forward the packet normally. Otherwise, it will block the packet. </t>
+        <t>Loose uRPF <xref target="RFC3704"/> also leverages FIB for SAV, but
+        it takes a much looser validation than strict uRPF. Particularlly, if
+        there exists a FIB entry whose source prefix covering the source
+        address of an incoming packet, the router will forward the packet
+        normally. Otherwise, it will block the packet.</t>
 
-        <t>The SAV table of loose uRPF can also be considered as an IP prefix allowlist. Each interface takes the same allowlist for validation. Loose uRPF is much safer than strict uRPF but obviously not powerful in SAV. 
-        Similar to strict uRPF, loose uRPF is carried out in data plane by FIB, and has typically two optional actions (i.e., drop and permit). </t>
-
+        <t>The SAV table of loose uRPF can also be considered as an IP prefix
+        allowlist. Each interface takes the same allowlist for validation.
+        Loose uRPF is much safer than strict uRPF but obviously not powerful
+        in SAV. Similar to strict uRPF, loose uRPF is carried out in data
+        plane by FIB, and has typically two optional actions (i.e., drop and
+        permit).</t>
       </section>
 
       <section title="FIB-extended SAV">
-        <t>There are also some other SAV mechanisms such as FP-uRPF and EFP-uRPF <xref target="RFC8704"/>. They leverage the information out of FIB information (i.e., RIB) for generating more accurate allowlist such that improper block can be avoided and improper permit can be reduced. </t>
-        
-        <t>Obviously, FIB is not enough for expressing the above SAV requirements in data plane. However, how to enable such SAV tables in data plane is missing in the related documents. For brevity, the above mechainms are classified into FIB-extended SAV which is a kind of SAV expression manners in data plane. </t>
+        <t>There are also some other SAV mechanisms such as FP-uRPF and
+        EFP-uRPF <xref target="RFC8704"/>. They leverage the information out
+        of FIB information (i.e., RIB) for generating more accurate allowlist
+        such that improper block can be avoided and improper permit can be
+        reduced.</t>
 
-        <t>FP-uRPF and EFP-uRPF have the same validation mode (allowlists) and validation actions as strict uRPF and loose uRPF. When the accuracy of SAV table cannot be guaranteed, a looser allowlist will be taken. For example, operators can deploy EFP-uRPF with algorithm B at customer interfaces of an AS and loose uRPF at provider/peer interfaces of an AS. </t>
+        <t>Obviously, FIB is not enough for expressing the above SAV
+        requirements in data plane. However, how to enable such SAV tables in
+        data plane is missing in the related documents. For brevity, the above
+        mechainms are classified into FIB-extended SAV which is a kind of SAV
+        expression manners in data plane.</t>
+
+        <t>FP-uRPF and EFP-uRPF have the same validation mode (allowlists) and
+        validation actions as strict uRPF and loose uRPF. When the accuracy of
+        SAV table cannot be guaranteed, a looser allowlist will be taken. For
+        example, operators can deploy EFP-uRPF with algorithm B at customer
+        interfaces of an AS and loose uRPF at provider/peer interfaces of an
+        AS.</t>
       </section>
 
       <section title="Requirements">
-        <t>Flexible validation modes. SAV tables should have different validation modes besides accurate allowlists and very loose allowlists. Operators can choose appropriated modes in different cases for achieving as much protection as possible. </t>
+        <t>Flexible validation modes. SAV tables should have different
+        validation modes besides accurate allowlists and very loose
+        allowlists. Operators can choose appropriated modes in different cases
+        for achieving as much protection as possible.</t>
 
-        <t>Diversified validation actions. SAV tables are for judging the validity of source adddresses. There should be multiple actions available (not only drop and permit) for each validity states so as to supporting customized SAv requirements. This is more likely an implementation problem and not need to be considered much when designing SAV generation mechainms/protocols. </t>
+        <t>Diversified validation actions. SAV tables are for judging the
+        validity of source adddresses. There should be multiple actions
+        available (not only drop and permit) for each validity states so as to
+        supporting customized SAv requirements. This is more likely an
+        implementation problem and not need to be considered much when
+        designing SAV generation mechainms/protocols.</t>
 
-        <t>Accurate and scalable expressing manner for SAV tables in data plane. ACL and FIB is not enough due to either scalability problems or inaccuracy problems. A new data structure is needed to break the two restrictions, but the overhead of data plane should be controlled. </t>
+        <t>Accurate and scalable expressing manner for SAV tables in data
+        plane. ACL and FIB is not enough due to either scalability problems or
+        inaccuracy problems. A new data structure is needed to break the two
+        restrictions, but the overhead of data plane should be controlled.</t>
       </section>
-
     </section>
 
     <!---->
@@ -149,36 +239,92 @@
     <section title="Modes for General SAV Table">
       <t/>
 
-      <t>Here, we describe four modes for general SAV tables which can be generated by any SAV mechanisms or protocols. These modes can be applied in proper scenarios for different levels of source prefix protection. </t>
+      <t>Here, we describe four modes for general SAV tables which can be
+      generated by any SAV mechanisms or protocols. These modes can be applied
+      in proper scenarios for different levels of source prefix
+      protection.</t>
 
-      <t>Note that, each mode can be enabled on one or more specific interfaces. The device with these interfaces will conduct SAV of the corresponding mode on the packets coming from the interfaces enabling an SAV mode. </t>
+      <t>Note that, each mode can be enabled on one or more specific
+      interfaces. The device with these interfaces will conduct SAV of the
+      corresponding mode on the packets coming from the interfaces enabling an
+      SAV mode.</t>
 
       <section title="Mode 1: IP prefix allowlist">
-        <t>The interface enabling Mode 1 will block any packets whose source addresses are not included in the allowlist of the interface. Most of existing SAV tables such as ACL-based filter, strict uRPF, and EFP-uRPF work in such mode. </t>
+        <t>The interface enabling Mode 1 will block any packets whose source
+        addresses are not included in the allowlist of the interface. Most of
+        existing SAV tables such as ACL-based filter, strict uRPF, and
+        EFP-uRPF work in such mode.</t>
 
-        <t>Mode 1 on an interface requires that the complete set of legal prefixes connected to the interface is obtained. If not all legal prefixes are included in the allowlist, packets with unknown legal prefix arriving at the interface may be improperly blocked. This mode is suitable to the interfaces connecting to a subnet, a stub AS, or a customer cone. Such a mode can efficiently prevent the connected network from spoofing source prefixes of other networks. </t>
+        <t>Mode 1 on an interface requires that the complete set of legal
+        prefixes connected to the interface is obtained. If not all legal
+        prefixes are included in the allowlist, packets with unknown legal
+        prefix arriving at the interface may be improperly blocked. This mode
+        is suitable to the interfaces connecting to a subnet, a stub AS, or a
+        customer cone. Such a mode can efficiently prevent the connected
+        network from spoofing source prefixes of other networks.</t>
       </section>
 
       <section title="Mode 2: IP prefix blocklist">
-        <t>The interface enabling Mode 2 will accept any packets whose source addresses are not included in the blocklist of the interface. This mode does not require the complete blocklist. If the packets with particular source addresses need to be discarded, Mode 2 can be taken. </t>
+        <t>The interface enabling Mode 2 will accept any packets whose source
+        addresses are not included in the blocklist of the interface. This
+        mode does not require the complete blocklist. If the packets with
+        particular source addresses need to be discarded, Mode 2 can be
+        taken.</t>
 
-        <t>Mode 2 can be used for proactive filtering and reactive filtering.  Usually the source prefixes that are sure to be illegal will be put into the blocklist. which is proactive filtering. Reactive filtering is usually taken in DDoS elimination for dropping specific traffic. Actually, ACL has been widely used for fine-grained reactive traffic filtering. Even so, IP prefix blocklist is required. When the filter is close to source, IP prefix-based filtering is enough and has better scalability and performance than ACL-based fine-grained one. </t>
+        <t>Mode 2 can be used for proactive filtering and reactive filtering.
+        Usually the source prefixes that are sure to be illegal will be put
+        into the blocklist. which is proactive filtering. Reactive filtering
+        is usually taken in DDoS elimination for dropping specific traffic.
+        Actually, ACL has been widely used for fine-grained reactive traffic
+        filtering. Even so, IP prefix blocklist is required. When the filter
+        is close to source, IP prefix-based filtering is enough and has better
+        scalability and performance than ACL-based fine-grained one.</t>
 
-        <t>Mode 2 is complementary to Mode 1 with respect to the whole IP space. For an interface, if the list of all the legal prefixes are known (Mode 1), all the other prefixes in the whole IP space will be illegal (Mode 2). </t>
+        <t>Mode 2 is complementary to Mode 1 with respect to the whole IP
+        space. For an interface, if the list of all the legal prefixes are
+        known (Mode 1), all the other prefixes in the whole IP space will be
+        illegal (Mode 2).</t>
       </section>
 
       <section title="Mode 3: Legal interfaces for specific IP prefixes">
-        <t>Under Mode 3, the router will check whether the packets with specific source addresses arrive at expected interfaces. If the incoming interface of a packet is included in the legal interfaces of the matched source prefix, the packet will be forwarded normally. Otherwise, the packet will be dropped. </t>
+        <t>Under Mode 3, the router will check whether the packets with
+        specific source addresses arrive at expected interfaces. If the
+        incoming interface of a packet is included in the legal interfaces of
+        the matched source prefix, the packet will be forwarded normally.
+        Otherwise, the packet will be dropped.</t>
 
-        <t>In many cases, it is difficult for an interface getting all the source prefixes such that Mode 1 can be taken. For example, the interface with a default route or the interface connecting to the Internet through a provider AS can hardly promise to know all the legal source prefixes. In such cases, Mode 3 takes effects. Mode 3 focuses on checking whether the learned source prefixes arrive at the expected interfaces. For unknown source prefixes, it does care about. </t>
+        <t>In many cases, it is difficult for an interface getting all the
+        source prefixes such that Mode 1 can be taken. For example, the
+        interface with a default route or the interface connecting to the
+        Internet through a provider AS can hardly promise to know all the
+        legal source prefixes. In such cases, Mode 3 takes effects. Mode 3
+        focuses on checking whether the learned source prefixes arrive at the
+        expected interfaces. For unknown source prefixes, it does care
+        about.</t>
       </section>
 
       <section title="Mode 4: Illegal interfaces for specific IP prefixes">
-        <t>Under Mode 4, the router will check whether the packets with specific source addresses arrive at unexpected interfaces. If the incoming interface of a packet is included in the illegal interfaces of the matched source prefix, the packet will be blocked. Otherwise, the packet will be forwarded normally. </t>
+        <t>Under Mode 4, the router will check whether the packets with
+        specific source addresses arrive at unexpected interfaces. If the
+        incoming interface of a packet is included in the illegal interfaces
+        of the matched source prefix, the packet will be blocked. Otherwise,
+        the packet will be forwarded normally.</t>
 
-        <t>Mode 4 is complementary to Mode 3 with respect to the interfaces on a device. For a source prefix, if the set of legal interfaces are known, all the other interfaces of the located router are obviously illegal. So, Mode 3 and Mode 4 have similar application cases. If only a small set of interfaces (e.g., 1 or 2 interfaces) are legal for most source prefixes, Mode 3 are preferred. If only a small set of interfaces are considered as illegal for most source prefixes, Mode 4 would be a better choice. </t>
+        <t>Mode 4 is complementary to Mode 3 with respect to the interfaces on
+        a device. For a source prefix, if the set of legal interfaces are
+        known, all the other interfaces of the located router are obviously
+        illegal. So, Mode 3 and Mode 4 have similar application cases. If only
+        a small set of interfaces (e.g., 1 or 2 interfaces) are legal for most
+        source prefixes, Mode 3 are preferred. If only a small set of
+        interfaces are considered as illegal for most source prefixes, Mode 4
+        would be a better choice.</t>
 
-        <t>Conclusion: Mode 1 and Mode 2 are for preventing spoofed source adddresses entering specific interfaces, while Mode 3 and Mode 4 prevent specific source prefixes from being spoofed. The above modes can be enabled at any target interface. An operator may have the interfaces of a router enabling different SAV modes for achieving particular SAV goals. </t>
+        <t>Conclusion: Mode 1 and Mode 2 are for preventing spoofed source
+        adddresses entering specific interfaces, while Mode 3 and Mode 4
+        prevent specific source prefixes from being spoofed. The above modes
+        can be enabled at any target interface. An operator may have the
+        interfaces of a router enabling different SAV modes for achieving
+        particular SAV goals.</t>
       </section>
     </section>
 
@@ -186,9 +332,9 @@
       <t/>
 
       <section title="SAV Table Structure">
+        <t>Figure 1 illustrates the SAV rule structure of Mode 1 and Mode 2.
+        Each rule only contains a source prefix.</t>
 
-        <t>Figure 1 illustrates the SAV rule structure of Mode 1 and Mode 2. Each rule only contains a source prefix. </t>
-        
         <figure>
           <artwork align="center"><![CDATA[
       +--------------------------------+
@@ -202,7 +348,9 @@
     Figure 1: SAV table structure of Mode 1 and Mode 2     ]]></artwork>
         </figure>
 
-        <t>Figure 2 presents the SAV table structure of Mode 3 and Mode 4. Each rule consists of a source prefix as well as one or more incoming interfaces. </t>
+        <t>Figure 2 presents the SAV table structure of Mode 3 and Mode 4.
+        Each rule consists of a source prefix as well as one or more incoming
+        interfaces.</t>
 
         <figure>
           <artwork align="center"><![CDATA[
@@ -216,37 +364,69 @@
 
     Figure 2: SAV table structure of Mode 3 and Mode 4      ]]></artwork>
         </figure>
+
         <!--incoming interface ... in physical semantics-->
 
-        <t>This document only describes the logical SAV table structure of the four modes. The concrete implementation in data plane is out of the scope. </t>
-
+        <t>This document only describes the logical SAV table structure of the
+        four modes. The concrete implementation in data plane is out of the
+        scope.</t>
       </section>
 
       <section title="SAV Procedure">
         <!--what traffic need to be validated-->
-        <t>The packets entering from SAV-enabled interfaces are named as interested packets. A router looks up the source address of interested packets in its local SAV table and gets the validity states (i.e., valid, invalid, or unknow). </t>
 
-        <t>For Mode 1 and Mode 2, there are two validity states: </t>
+        <t>The packets entering from SAV-enabled interfaces are named as
+        interested packets. A router looks up the source address of interested
+        packets in its local SAV table and gets the validity states (i.e.,
+        valid, invalid, or unknow).</t>
+
+        <t>For Mode 1 and Mode 2, there are two validity states:</t>
+
         <t><list style="symbols">
-        <t>Valid. For Mode 1, "Valid" means that there is a source prefix in the SAV table covering the source address. For Mode 2, "Valid" means that there is no source prefix in the SAV table covering the source address. </t>
+            <t>Valid. For Mode 1, "Valid" means that there is a source prefix
+            in the SAV table covering the source address. For Mode 2, "Valid"
+            means that there is no source prefix in the SAV table covering the
+            source address.</t>
 
-        <t>Invalid. The opposite results of "Valid". </t>
-        </list></t>
+            <t>Invalid. The opposite results of "Valid".</t>
+          </list></t>
 
-        <t>For Mode 3 and Mode 4, there are three validity states: </t>
+        <t>For Mode 3 and Mode 4, there are three validity states:</t>
+
         <t><list style="symbols">
-        <t>Valid. For Mode 3, "Valid" means that the source address hits an SAV rule (using Longest Prefix Matching) in the SAV table and the incoming interface of the packet is recorded in the SAV rule. For Mode 4, "Valid" means that the source address hits an SAV rule in the SAV table and the incoming interface of the packet is not recorded in the SAV rule. </t>
+            <t>Valid. For Mode 3, "Valid" means that the source address hits
+            an SAV rule (using Longest Prefix Matching) in the SAV table and
+            the incoming interface of the packet is recorded in the SAV rule.
+            For Mode 4, "Valid" means that the source address hits an SAV rule
+            in the SAV table and the incoming interface of the packet is not
+            recorded in the SAV rule.</t>
 
-        <t>Invalid. For Mode 3, "Valid" means that the source address hits an SAV rule in the SAV table but the incoming interface of the packet is not recorded in the SAV rule. For Mode 4, "Valid" means that the source address hits an SAV rule in the SAV table but the incoming interface of the packet is recorded in the SAV rule. </t>
+            <t>Invalid. For Mode 3, "Valid" means that the source address hits
+            an SAV rule in the SAV table but the incoming interface of the
+            packet is not recorded in the SAV rule. For Mode 4, "Valid" means
+            that the source address hits an SAV rule in the SAV table but the
+            incoming interface of the packet is recorded in the SAV rule.</t>
 
-        <t>Unknown. For Mode 3 and Mode 4, the source address is not covered by any SAV rule in the SAV table. </t>
-        </list></t>
+            <t>Unknown. For Mode 3 and Mode 4, the source address is not
+            covered by any SAV rule in the SAV table.</t>
+          </list></t>
 
-        <t>If the state is "valid", the source address is considered as a legitimate source address. If the state is "invalid", the source address is considered as a spoofed address. If the state is "unknow", the legality of the source address cannot be determined directly. </t>
-
+        <t>If the state is "valid", the source address is considered as a
+        legitimate source address. If the state is "invalid", the source
+        address is considered as a spoofed address. If the state is "unknow",
+        the legality of the source address cannot be determined directly.</t>
       </section>
+
       <section title="Validation Action">
-        <t>The router takes actions based on the validity state of each packet. The optional actions include "permit", "block", "rate limit", and "sample", etc. Unlike "drop" which drops packets directly, "rate limit" takes a safer manner. It applies an upper bound of traffic rate for eliminating source address spoofing attacks. "Sample" mirrors the specific packets with a configurable sampling rate and reports them to remote servers. The sampled packets can be used for attack source tracing or other analysis. "Sample" can be taken together with any one of the other three actions, and it can also exists solely. </t>
+        <t>The router takes actions based on the validity state of each
+        packet. The optional actions include "permit", "block", "rate limit",
+        and "sample", etc. Unlike "drop" which drops packets directly, "rate
+        limit" takes a safer manner. It applies an upper bound of traffic rate
+        for eliminating source address spoofing attacks. "Sample" mirrors the
+        specific packets with a configurable sampling rate and reports them to
+        remote servers. The sampled packets can be used for attack source
+        tracing or other analysis. "Sample" can be taken together with any one
+        of the other three actions, and it can also exists solely.</t>
 
         <figure>
           <artwork align="center"><![CDATA[
@@ -262,14 +442,26 @@
     Figure 3: Optional actions for different validity states   ]]></artwork>
         </figure>
 
-        <t>Figure 3 shows the optional action combinations for different validity states. Note that, "permit" can also be applied to "Invalid". One possible case is that network operators just want to monitor source address spoofing attacks by sampling instead of blocking them. For the state of "unknow", whether to discard packets depends on the strictness of SAV. Existing uRPF implementations have supported similar options. </t>
+        <t>Figure 3 shows the optional action combinations for different
+        validity states. Note that, "permit" can also be applied to "Invalid".
+        One possible case is that network operators just want to monitor
+        source address spoofing attacks by sampling instead of blocking them.
+        For the state of "unknow", whether to discard packets depends on the
+        strictness of SAV. Existing uRPF implementations have supported
+        similar options.</t>
       </section>
     </section>
 
     <section title="Security Considerations">
-      <t>This document focuses on SAV organization and local SAV operation. The generation of SAV table is not referred. There may be some security considerations for SAV generation, but it is not in the scope of this document. </t>
+      <t>This document focuses on SAV organization and local SAV operation.
+      The generation of SAV table is not referred. There may be some security
+      considerations for SAV generation, but it is not in the scope of this
+      document.</t>
 
-      <t>The "Sample" action pushs data to remote servers. This function can be achieved by existing techniques like NetStream or NetFlow. The "Sample" action may induce same security considerations as these techniques, and the corresponding documents have discussed them.</t>
+      <t>The "Sample" action pushs data to remote servers. This function can
+      be achieved by existing techniques like NetStream or NetFlow. The
+      "Sample" action may induce same security considerations as these
+      techniques, and the corresponding documents have discussed them.</t>
     </section>
 
     <section title="IANA Considerations">

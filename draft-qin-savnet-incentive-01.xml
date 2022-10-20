@@ -27,9 +27,8 @@
 <!-- end of list of popular I-D processing instructions -->
 <rfc category="info" docName="draft-qin-savnet-incentive-01" ipr="trust200902">
   <front>
-    <title abbrev="SAVNET Incentive">The Incentive Consideration for Source
-    Address Validation in Intra-domain and Inter-domain Networks
-    (SAVNET)</title>
+    <title abbrev="SAVNET Incentive">The Incentive Considerations for Source
+    Address Validation Against Spoofing and Reflection Attacks</title>
 
     <author fullname="Lancheng Qin" initials="L." surname="Qin">
       <organization>Tsinghua University</organization>
@@ -138,7 +137,7 @@
       Forwarding (EFP-uRPF) <xref target="RFC8704"/>) have been proposed to
       identify and reject traffic with forged source IP addresses. However,
       they have not been widely deployed due to their technical limitations,
-      lack of incentive, or other problems. Source address spoofing remains a
+      lack of incentives, or other problems. Source address spoofing remains a
       significant challenge in today's Internet.</t>
 
       <t>To help narrow the gap of existing SAV mechanisms, <xref
